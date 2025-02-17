@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Serif, PT_Serif } from "next/font/google";
 import "./globals.css";
 import { aboutMe } from "@/data/aboutme";
 import { customMetadata } from "@/data/title-description";
+import 'katex/dist/katex.min.css'
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -40,6 +41,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.variable} ${ptSerif.variable} antialiased`}
       >

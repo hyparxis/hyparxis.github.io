@@ -18,9 +18,9 @@ export interface AboutMe {
 }
 
 export const aboutMe: AboutMe = {
-  name: "Jane R. Smith",
-  title: "Ph.D. Candidate",
-  institution: "Stanford University",
+  name: "Pedro Morais",
+  title: "Engineer",
+  institution: "Agility Robotics",
   // Note that links work in the description
   description:
     "I'm a final-year <a href='https://www.stanford.edu'>PhD candidate</a> working at the intersection of causal inference and machine learning. My research focuses on developing robust, interpretable systems that can reason about cause and effect in complex environments.",
