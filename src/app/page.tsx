@@ -11,6 +11,9 @@ import { experienceData } from "@/data/experience";
 import { PortfolioEntry } from "@/components/portfolio-entry";
 import { portfolioData } from "@/data/portfolio";
 import { sectionOrder, Section } from "@/data/section-order";
+import { BlogPosts } from "@/components/sections/blog-posts";
+import { BlogPostEntry } from "@/components/blog-post-entry";
+import { blogPostData } from "@/data/blogposts";
 
 export default function Home() {
   return (
@@ -123,6 +126,26 @@ export default function Home() {
                         <div className="space-y-12">
                           {portfolioData.map((portfolio, index) => (
                             <PortfolioEntry key={index} portfolio={portfolio} />
+                          ))}
+                        </div>
+                      </section>
+                    )
+                  );
+                case Section.BlogPosts:
+                  return (
+                    blogPostData.length > 0 && (
+                      <section key={sectionName}>
+                        <h2 className="font-serif text-l mb-12 tracking-wide uppercase">
+                          Blog Posts
+                        </h2>
+                        <div className="space-y-12">
+                          {blogPostData.map((post, index) => (
+                            <div key={index}>
+                              <BlogPostEntry post={post} />
+                              {index < blogPostData.length - 1 && (
+                                <div className="h-px bg-zinc-200 my-8" />
+                              )}
+                            </div>
                           ))}
                         </div>
                       </section>
