@@ -23,13 +23,16 @@ export function MDXContent({ source }: MDXContentProps) {
       prose-ol:list-decimal prose-ol:pl-4
       prose-li:text-zinc-600 prose-li:my-1
       prose-blockquote:border-l-4 prose-blockquote:border-zinc-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-zinc-600
-      [&_.math]:overflow-x-auto [&_.math]:py-4
-      [&_.katex]:text-zinc-900
-      [&_.katex-display]:overflow-auto [&_.katex-display]:py-4
-      [&_.katex-display]:-mx-4 [&_.katex-display]:px-4
-      [&_.katex]:break-words [&_.katex-html]:break-words
+      [&_.math]:py-1
+      [&_.katex]:text-zinc-600 [&_.katex]:text-[1.25em]
+      [&_.katex-display]:py-1
+      [&_.katex]:break-words
+      [&_.katex-html]:break-words
       [&_.katex-html]:leading-relaxed
       [&_.katex-html_.tag]:hidden
+      [&_p+.math]:mt-0
+      [&_.math+p]:mt-0
+      [&_.katex-display]:overflow-hidden
     ">
       <MDXRemote {...source} />
     </div>
