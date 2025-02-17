@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { BlogPost } from "@/data/blogposts";
 
 export function BlogPostEntry({ post }: { post: BlogPost }) {
@@ -23,8 +24,8 @@ export function BlogPostEntry({ post }: { post: BlogPost }) {
         <h3 className="font-serif text-md mb-3">{post.title}</h3>
         <p className="text-sm text-zinc-600 mb-4">{post.summary}</p>
         <div className="flex flex-row gap-6">
-          <a
-            href={post.url}
+          <Link
+            href={`/blog/${post.slug}`}
             className="group inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-900 transition-colors duration-300"
           >
             <ArrowUpRight
@@ -32,7 +33,7 @@ export function BlogPostEntry({ post }: { post: BlogPost }) {
               className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300"
             />
             <span className="tracking-wider uppercase">Read More</span>
-          </a>
+          </Link>
         </div>
       </div>
     </div>
