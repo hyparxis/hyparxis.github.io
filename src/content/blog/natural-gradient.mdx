@@ -153,6 +153,13 @@ In the left figure below, we apply vanilla gradient descent under this loss func
 
 In the right figure, we perform steepest descent using the metric $(x - x^\prime)^\top A (x - x^\prime).$ We can see that the steps go straight toward the global minimum in this case.
 
+<center>
+<figure>
+  <img src="/images/natural-gradient/gd_euclidean_mahalanobis.png" />
+  <figcaption>Steepest descent under Euclidean and Mahalanobis metrics.</figcaption>
+</figure>
+</center>
+
 {/* However, in practice we won't know the full geometry of the loss function. In the toy examples above, we only knew $A$ because we constructed the problem ourselves. Thus, another challenge is locally estimating the curvature of the space. */}
 
 ### Fisher metric
@@ -264,17 +271,21 @@ When applied as a preconditioning matrix for the gradient, this means that we'll
 
 Let's try to visualize this. I plotted the isocontours of the univariate Gaussian below, with $\mu = 0, \log \sigma = 0$. Notice that for low values of the variance, the isocontours are much closer to each other. This implies that a gradient step in the realm of low variance will result in a much larger change in the function value compared to a step in the realm of high variance. In other words, the geometry is "steeper" with low variance.
 
+<center>
 <figure>
   <img src="/images/natural-gradient/gaussian_isocontours_fisher.png" alt="Gaussian isocontours" />
   <figcaption>Isocontours of the likelihood of the univariate Gaussian.</figcaption>
 </figure>
+</center>
 
 Notice that accounting for this curvature is a drastic improvement over vanilla gradient descent. To continue with the univariate Gaussian example, suppose we're computing the distance between two Gaussians just based on their means, $\mu_1$ and $\mu_2$. Below, in each plot the means are the same, $\mu_1=-2, \mu_2=2$. However, the variances are different. Under the Euclidean metric these two pairs of Gaussians have the same distance between them. However, under the KL divergence, the Gaussians on the left are much "closer" to one another than those on the right.
 
+<center>
 <figure>
   <img src="/images/natural-gradient/univariate_gaussian_euclidean.png" alt="Univariate Gaussian comparison" />
   <figcaption>The Euclidean distance (in terms of their parameters) between $p_1$ and $p_2$ is the same in each plot. In contrast, the KL divergence is higher for the Gaussians on the right.</figcaption>
 </figure>
+</center>
 
 ## Appendix
 

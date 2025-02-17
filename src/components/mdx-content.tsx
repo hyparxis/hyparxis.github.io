@@ -1,12 +1,31 @@
 'use client'
 
 import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote'
+import { useMemo } from 'react'
 
 interface MDXContentProps {
   source: MDXRemoteSerializeResult
 }
 
 export function MDXContent({ source }: MDXContentProps) {
+  const components = useMemo(() => ({
+    h1: ({ children, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
+      <h1 id={children?.toString().toLowerCase()} {...props}>
+        {children}
+      </h1>
+    ),
+    h2: ({ children, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
+      <h2 id={children?.toString().toLowerCase()} {...props}>
+        {children}
+      </h2>
+    ),
+    h3: ({ children, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
+      <h3 id={children?.toString().toLowerCase()} {...props}>
+        {children}
+      </h3>
+    ),
+  }), [])
+
   return (
     <div className="prose dark:prose-invert max-w-none
       prose-headings:font-serif 
@@ -34,7 +53,7 @@ export function MDXContent({ source }: MDXContentProps) {
       [&_.math+p]:mt-0
       [&_.katex-display]:overflow-hidden
     ">
-      <MDXRemote {...source} />
+      <MDXRemote {...source} components={components} />
     </div>
   )
 } 
