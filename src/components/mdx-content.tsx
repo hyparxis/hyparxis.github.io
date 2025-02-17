@@ -29,6 +29,7 @@ export function MDXContent({ source }: MDXContentProps) {
       [&_.katex-display]:-mx-4 [&_.katex-display]:px-4
       [&_.katex]:break-words [&_.katex-html]:break-words
       [&_.katex-html]:leading-relaxed
+      [&_.katex-html_.tag]:hidden
     ">
       <MDXRemote {...source} />
     </div>

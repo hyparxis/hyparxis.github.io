@@ -33,7 +33,18 @@ export default async function BlogPost({
         remarkMath
       ],
       rehypePlugins: [
-        rehypeKatex
+        [rehypeKatex, {
+          output: 'html',
+          throwOnError: true,
+          strict: false,
+          trust: true,
+          macros: {
+            "\\eqref": "\\href{###1}{(\\text{#1})}",
+          },
+          displayMode: true,
+          leqno: false,
+          fleqn: false,
+        }]
       ],
     },
   })

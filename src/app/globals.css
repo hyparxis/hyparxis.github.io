@@ -25,3 +25,8 @@ body {
 .sans {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* Add this to your existing CSS */
+.katex-html .tag {
+  display: none !important;
+}
