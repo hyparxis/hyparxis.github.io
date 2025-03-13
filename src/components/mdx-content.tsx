@@ -28,14 +28,16 @@ export function MDXContent({ source }: MDXContentProps) {
 
   return (
     <div className="prose dark:prose-invert max-w-none
-      prose-headings:font-serif 
+      prose-headings:font-sans prose-headings:tracking-wide prose-headings:text-zinc-700
       prose-h1:text-2xl prose-h1:mb-8
       prose-h2:text-xl prose-h2:mt-12 prose-h2:mb-6
       prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-4
-      prose-p:text-zinc-600 prose-p:leading-relaxed
+      prose-p:text-zinc-600 prose-p:leading-relaxed prose-p:font-serif
       prose-a:text-zinc-900 prose-a:underline hover:prose-a:text-zinc-600
       prose-code:text-zinc-700 prose-code:bg-zinc-100 prose-code:px-1 prose-code:rounded
-      prose-pre:bg-zinc-100 prose-pre:text-zinc-700
+      prose-pre:bg-zinc-100 prose-pre:text-zinc-700 prose-pre:p-4
+      [&_pre]:bg-zinc-100 [&_pre]:rounded-lg [&_pre]:overflow-x-auto
+      [&_code]:bg-transparent [&_code]:p-0
       prose-img:rounded-lg
       prose-strong:text-zinc-700
       prose-ul:list-disc prose-ul:pl-4

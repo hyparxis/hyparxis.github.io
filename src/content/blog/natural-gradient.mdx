@@ -287,6 +287,53 @@ Notice that accounting for this curvature is a drastic improvement over vanilla 
 </figure>
 </center>
 
+## Code
+
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from matplotlib.patches import Ellipse
+from os.path import join as pjoin
+from scipy.stats import norm
+inv = np.linalg.inv
+import matplotlib
+font = {"size": 20}
+matplotlib.rc("font", **font)
+matplotlib.rcParams["text.usetex"] = True
+
+
+mu_true = 0
+sigma2_true = 1
+n = 2000
+data = np.random.normal(mu_true, np.sqrt(sigma2_true), size=n)
+
+f = lambda mu, lam: n * (-0.5 * np.log(2 * np.pi) - lam) - 0.5 * np.exp(-2 * lam) * (np.sum(data**2) - 2 * mu * np.sum(data) + n * mu**2)
+
+def fgrad(mu, lam):
+        mugrad = -0.5 * np.exp(-2 * lam) * (2 * mu * np.sum(data) + n * mu)
+        lamgrad = n + np.exp(-2 * lam) * (np.sum(data**2) - 2 * mu * np.sum(data) + n * mu**2)
+        return np.array([mugrad, lamgrad])
+
+plt.figure(figsize=(6, 6))
+xlimits = [-1, 1]
+ylimits = [-2, 2]
+numticks = 100
+x = np.linspace(*xlimits, num=numticks)
+y = np.linspace(*ylimits, num=numticks)
+X, Y = np.meshgrid(x, y)
+zs = f(np.atleast_2d(X.ravel()), np.atleast_2d(Y.ravel()))
+Z = zs.reshape(X.shape)
+plt.contour(X, Y, Z, levels=200)
+plt.tight_layout()
+plt.title(r"$\log p(x | \mu, \sigma^2)$")
+plt.xlabel(r"$\mu$")
+plt.ylabel(r"$\log \sigma$")
+plt.xticks(size=20)
+plt.yticks(size=20)
+plt.tight_layout()
+plt.show()
+```
 ## Appendix
 
 ### Fisher information approximates the KL divergence

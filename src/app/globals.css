@@ -30,3 +30,10 @@ body {
 .katex-html .tag {
   display: none !important;
 }
+
+/* Add these lines at the end of your CSS to disable any transition animations */
+* {
+  transition-property: none !important;
+  transform: none !important;
+  animation: none !important;
+}

@@ -12,28 +12,27 @@ export interface Publication {
 }
 
 export const publicationData: Publication[] = [
-  // If you don't want to show publications, just make the array empty.
   {
-    year: "2024",
-    conference: "NeurIPS",
-    title: "Scalable Causal Discovery in High-Dimensional Time Series",
-    authors: "Jane Smith, Sarah Johnson, Yue Zhang",
-    paperUrl: "https://arxiv.org/abs/2409.15476",
-    codeUrl: "https://github.com/jsmith/scalable-causal-discovery",
-    //bibtex: "https://arxiv.org/abs/2409.15476.bib",
-    tldr: "Using causal discovery to find the causal structure of high-dimensional time series data.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1561622539-dffbfc2008fd?q=80&w=2076&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    award: "🏆 Best Paper Award",
-    // if you have an image in public/images, you can use it like this:
-    // imageUrl: "/images/publication-image.jpg"
+    year: "2019",
+    conference: "CoRL",
+    title: "Iterative Reinforcement Learning Based Design of Dynamic Locomotion Skills for Cassie",
+    authors: "Zhaoming Xie, Patrick Clary, Jeremy Dao, Pedro Morais, Jonathan Hurst, Michiel van de Panne",
+    paperUrl: "https://arxiv.org/abs/1903.09537",
+    imageUrl: "/images/corl2019/cassie.gif",
+    // codeUrl: "https://github.com/jsmith/robust-causal-discovery",
   },
   {
-    year: "2023",
-    conference: "ICML",
-    title: "Robust Causal Discovery Under Distribution Shift",
-    authors: "Jane Smith, Xue Chen, Sarah Johnson",
-    paperUrl: "https://arxiv.org/abs/2302.13095",
-    codeUrl: "https://github.com/jsmith/robust-causal-discovery",
+    year: "2018",
+    conference: "ICAPS",
+    title: "Monte-Carlo Planning for Agile Biped Locomotion",
+    authors: "Patrick Clary, Pedro Morais, Alan Fern, Jonathan Hurst",
+    paperUrl: "https://web.engr.oregonstate.edu/~afern/papers/icaps18-clary.pdf",
+    // codeUrl: "https://github.com/jsmith/scalable-causal-discovery",
+    //bibtex: "https://arxiv.org/abs/2409.15476.bib",
+    // tldr: "Using causal discovery to find the causal structure of high-dimensional time series data.",
+    imageUrl: "/images/mcds/pclary2018.jpg",
+    // award: "🏆 Best Paper Award",
+    // if you have an image in public/images, you can use it like this:
+    // imageUrl: "/images/publication-image.jpg"
   },
 ];
