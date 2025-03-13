@@ -7,16 +7,9 @@ export function NavBanner() {
   const pathname = usePathname();
   
   return (
-    <div className="border-b border-zinc-100 py-5 sticky top-0 bg-[#FFFCF8] z-10 shadow-sm backdrop-blur-sm bg-opacity-95">
-      <div className="max-w-screen-lg mx-auto px-8 flex items-center justify-between">
-        <Link 
-          href="/" 
-          className="font-serif text-xl text-zinc-800 hover:text-zinc-600 transition-colors"
-        >
-          <span className="tracking-tight">Home</span>
-        </Link>
-        
-        <div className="flex space-x-10">
+    <div className="py-5 bg-[#FFFCF8]">
+      <div className="max-w-screen-lg mx-auto px-8 flex items-center justify-center">
+        <div className="flex space-x-16">
           <Link 
             href="/blog" 
             className={`relative py-1 text-sm font-sans tracking-wide ${
@@ -29,7 +22,7 @@ export function NavBanner() {
           </Link>
           
           <Link 
-            href="/#about" 
+            href="/" 
             className={`relative py-1 text-sm font-sans tracking-wide ${
               pathname === '/' 
                 ? 'text-zinc-800 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-zinc-300' 
