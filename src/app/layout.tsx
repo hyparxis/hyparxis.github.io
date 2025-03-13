@@ -4,6 +4,7 @@ import "./globals.css";
 import { aboutMe } from "@/data/aboutme";
 import { customMetadata } from "@/data/title-description";
 import 'katex/dist/katex.min.css'
+import { NavBanner } from "@/components/nav-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.variable} ${ptSerif.variable} antialiased bg-[#FFFCF8]`}
       >
+        <NavBanner />
         {children}
         <footer className="border-t border-neutral-200 dark:border-neutral-800">
           <div className="flex flex-row mx-auto max-w-7xl px-6 py-12 md:flex md:items-start md:justify-between ">

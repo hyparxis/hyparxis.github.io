@@ -21,13 +21,13 @@ export default function Home() {
       <div className="max-w-screen-lg mx-auto px-8 py-24">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
           <div className="col-span-12 md:col-span-4 space-y-12 mb-8 md:mb-0">
-            <div className="md:sticky top-12 space-y-8">
+            <div className="md:sticky top-20 space-y-8">
               <ProfileSection aboutMe={aboutMe} />
             </div>
           </div>
           <div className="col-span-12 md:col-span-7 md:col-start-6 space-y-24">
             {aboutMe.description && (
-              <section>
+              <section id="about" className="scroll-mt-20">
                 <p
                   className="font-serif text-sm leading-relaxed text-zinc-700 [&_a]:underline [&_a]:text-zinc-900 [&_a:hover]:text-zinc-600"
                   dangerouslySetInnerHTML={{ __html: aboutMe.description }}
@@ -124,7 +124,7 @@ export default function Home() {
                 case Section.BlogPosts:
                   return (
                     blogPostData.length > 0 && (
-                      <section key={sectionName}>
+                      <section key={sectionName} id="blog-posts" className="scroll-mt-20">
                         <h2 className="font-serif text-l mb-12 tracking-wide uppercase">
                           Blog Posts
                         </h2>
