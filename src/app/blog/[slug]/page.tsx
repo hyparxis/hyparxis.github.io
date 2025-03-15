@@ -8,6 +8,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import rehypePrettyCode from 'rehype-pretty-code'
 import { MDXContent } from '@/components/mdx-content'
+import { UtterancesComments } from '@/components/utterances-comments'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
@@ -83,11 +84,20 @@ export default async function BlogPost({
           {/* Right Column - Content */}
           <div className="col-span-12 md:col-span-8 md:col-start-4">
             <article>
-              <header className="mb-10">
+              <header className="mb-12">
                 <h1 className="font-serif text-2xl mb-4">{data.title}</h1>
                 <div className="text-xs text-zinc-500">{data.date}</div>
               </header>
               <MDXContent source={mdxSource} />
+              
+              {/* Comments Section */}
+              <div className="mt-8 pt-4 border-t border-zinc-100">
+                <UtterancesComments 
+                  repo="hyparxis/hyparxis.github.io" 
+                  issueTerm="pathname"
+                  theme="github-light"
+                />
+              </div>
             </article>
           </div>
         </div>
