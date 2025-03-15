@@ -1,31 +1,37 @@
 'use client'
 
-import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote'
-import { useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
+import type { MDXRemoteSerializeResult } from 'next-mdx-remote'
 
 interface MDXContentProps {
   source: MDXRemoteSerializeResult
 }
 
 export function MDXContent({ source }: MDXContentProps) {
-  const components = useMemo(() => ({
-    h1: ({ children, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
-      <h1 id={children?.toString().toLowerCase()} {...props}>
-        {children}
-      </h1>
-    ),
-    h2: ({ children, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
-      <h2 id={children?.toString().toLowerCase()} {...props}>
-        {children}
-      </h2>
-    ),
-    h3: ({ children, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
-      <h3 id={children?.toString().toLowerCase()} {...props}>
-        {children}
-      </h3>
-    ),
-  }), [])
-
+  const [content, setContent] = useState<React.ReactElement | null>(null)
+  
+  useEffect(() => {
+    // Only import MDXRemote on the client side
+    import('next-mdx-remote').then(({ MDXRemote }) => {
+      setContent(
+        <MDXRemote 
+          {...source}
+          components={{
+            h1: ({ children, ...props }) => (
+              <h1 id={children?.toString().toLowerCase()} {...props}>{children}</h1>
+            ),
+            h2: ({ children, ...props }) => (
+              <h2 id={children?.toString().toLowerCase()} {...props}>{children}</h2>
+            ),
+            h3: ({ children, ...props }) => (
+              <h3 id={children?.toString().toLowerCase()} {...props}>{children}</h3>
+            ),
+          }}
+        />
+      )
+    })
+  }, [source])
+  
   return (
     <div className="prose dark:prose-invert max-w-none
       prose-headings:font-sans prose-headings:tracking-wide prose-headings:text-zinc-700
@@ -55,7 +61,7 @@ export function MDXContent({ source }: MDXContentProps) {
       [&_.math+p]:mt-0
       [&_.katex-display]:overflow-hidden
     ">
-      <MDXRemote {...source} components={components} />
+      {content || <div className="animate-pulse">Loading content...</div>}
     </div>
   )
 } 

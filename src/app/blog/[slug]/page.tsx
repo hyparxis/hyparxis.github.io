@@ -18,12 +18,18 @@ export async function generateStaticParams() {
   }))
 }
 
+// Update for Next.js 15 compatibility
+type Params = Promise<{ slug: string }>;
+
 export default async function BlogPost({
   params,
 }: {
-  params: { slug: string }
+  params: Params
 }) {
-  const filePath = path.join(process.cwd(), 'src/content/blog', `${params.slug}.mdx`)
+  // Await the params to get the slug
+  const { slug } = await params
+  
+  const filePath = path.join(process.cwd(), 'src/content/blog', `${slug}.mdx`)
   const fileContent = fs.readFileSync(filePath, 'utf8')
   const { content, data } = matter(fileContent)
   
