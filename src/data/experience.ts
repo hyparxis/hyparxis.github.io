@@ -10,21 +10,20 @@ export interface Experience {
 
 export const experienceData: Experience[] = [
   {
-    date: "Summer 2023",
-    title: "Research Intern",
-    company: "DeepMind",
+    date: "2019 - Present",
+    title: "Robotics Software Engineer",
+    company: "Agility Robotics",
     description:
-      "Developed novel algorithms for causal structure learning in reinforcement learning settings",
-    advisor: "Peter Wang",
-    companyUrl: "https://deepmind.com",
+      "One of the first 20 employees at Agility Robotics. Currently on the  simulation and innovation teams, previously optimization and controls.",
+    companyUrl: "https://agilityrobotics.com",
   },
   {
-    date: "Summer 2022",
-    title: "Research Intern",
-    company: "Google Research",
+    date: "2015 - 2019",
+    title: "Research Assistant",
+    company: "Dynamic Robotics Lab",
     description:
-      "Worked on improving robustness of large language models to distribution shifts",
-    manager: "Elise Brown",
-    companyUrl: "https://google.com",
+      'Planning and deep reinforcement learning based control for bipedal locomotion.',
+    advisor: "Jonathan Hurst, Alan Fern",
+    companyUrl: "https://mime.engineering.oregonstate.edu/research/drl/",
   },
 ];

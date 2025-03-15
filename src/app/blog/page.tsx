@@ -1,19 +1,23 @@
 import { blogPostData } from "@/data/blogposts";
 import Image from "next/image";
 import Link from "next/link";
+import { ProfileSection } from "@/components/profile-section";
+import { aboutMe } from "@/data/aboutme";
 
 export default function BlogPage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-screen-lg mx-auto px-8 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          {/* Left Column - Used for spacing to match blog post layout */}
-          <div className="col-span-12 md:col-span-3 mb-8 md:mb-0">
-            {/* Empty for consistency */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+          {/* Left Column - Profile Section (same as main page) */}
+          <div className="col-span-12 md:col-span-4 mb-8 md:mb-0">
+            <div className="md:sticky top-20 space-y-8">
+              <ProfileSection aboutMe={aboutMe} />
+            </div>
           </div>
 
-          {/* Right Column - Content */}
-          <div className="col-span-12 md:col-span-8 md:col-start-4">
+          {/* Right Column - Blog Content */}
+          <div className="col-span-12 md:col-span-7 md:col-start-6 space-y-24">
             <div className="space-y-8">
               {blogPostData.map((post, index) => (
                 <div key={index} className="group">

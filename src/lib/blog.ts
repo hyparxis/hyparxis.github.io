@@ -16,6 +16,7 @@ export function getBlogPosts(): BlogPostMeta[] {
   const fileNames = fs.readdirSync(postsDirectory)
   const posts = fileNames
     .filter(fileName => fileName.endsWith('.mdx'))
+    .filter(fileName => !fileName.startsWith('_'))
     .map(fileName => {
       const fullPath = path.join(postsDirectory, fileName)
       const fileContents = fs.readFileSync(fullPath, 'utf8')

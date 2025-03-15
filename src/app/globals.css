@@ -37,3 +37,15 @@ body {
   transform: none !important;
   animation: none !important;
 }
+
+/* Add to the end of your globals.css file */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 768px) {
+  .md\:sticky {
+    position: sticky;
+    align-self: start;
+  }
+}

@@ -11,9 +11,9 @@ export function NavBanner() {
       <div className="max-w-screen-lg mx-auto px-8 flex items-center justify-center">
         <div className="flex space-x-16">
           <Link 
-            href="/blog" 
+            href="/" 
             className={`relative py-1 text-sm font-sans tracking-wide ${
-              pathname.startsWith('/blog') 
+              pathname === '/' || pathname.startsWith('/blog')
                 ? 'text-zinc-800 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-zinc-300' 
                 : 'text-zinc-500'
             } hover:text-zinc-800 transition-colors`}
@@ -22,9 +22,9 @@ export function NavBanner() {
           </Link>
           
           <Link 
-            href="/" 
+            href="/about" 
             className={`relative py-1 text-sm font-sans tracking-wide ${
-              pathname === '/' 
+              pathname === '/about'
                 ? 'text-zinc-800 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-zinc-300' 
                 : 'text-zinc-500'
             } hover:text-zinc-800 transition-colors`}

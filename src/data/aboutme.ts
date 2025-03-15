@@ -19,18 +19,17 @@ export interface AboutMe {
 
 export const aboutMe: AboutMe = {
   name: "Pedro Morais",
-  title: "Engineer",
+  title: "Roboticist",
   institution: "Agility Robotics",
   // Note that links work in the description
   description:
-    'I am currently working on <a href="https://www.outerport.com">complex document understanding</a>, using iterative reasoning and a hierarchical caching system specialized for tensors and KV cache. If this sounds interesting, please reach out to <a href="mailto:towaki@outerport.com">towaki@outerport.com</a>.<br><br>Until recently, I worked as a Research Scientist at <a href="https://www.nvidia.com/en-us/research/">NVIDIA Research</a> on the Hyperscale Graphics Systems team with <a href="https://luebke.us/">David Luebke</a> and <a href="https://casual-effects.com/morgan/index.html">Morgan McGuire</a>.<br><br>I was also concurrently a Computer Science PhD student (on leave) at the <a href="https://utoronto.ca">University of Toronto</a>, supervised by <a href="https://www.cs.utoronto.ca/~fidler"> Sanja Fidler </a> and <a href="https://www.cs.utoronto.ca/~jacobson"> Alec Jacobson</a>, supported by the Royal Bank of Canada, Borealis AI Fellowship.<br><br>My interests broadly span machine learning, systems, computer graphics, and computer vision. In particular, I\'m interested in compression, retrieval, distribution formats, and infrastructure for multimedia. In the past, I have worked on neural fields <a href="https://neuralfields.cs.brown.edu/">[1]</a> and their combination with differentiable data structures <a href="https://nv-tlabs.github.io/nglod/">[2</a><a href="https://nv-tlabs.github.io/vqad/">,3</a><a href="https://research.nvidia.com/labs/toronto-ai/compact-ngp/">,4]</a> as a new compressed data format for immersive media (3D JPEG!)- as well as foundation models <a href="https://research.nvidia.com/labs/dir/magic3d/">[5]</a> for generating them.',
-  email: "______@stanford.edu",
-  imageUrl:
-    "https://images.unsplash.com/photo-1581481615985-ba4775734a9b?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  googleScholarUrl: "https://scholar.google.com/citations?user=bWtMl_MAAAAJ",
-  githubUsername: "janesmith",
-  // linkedinUsername: "janesmith",
-  // twitterUsername: "janesmith",
+    'I currently work at <a href="https://www.agilityrobotics.com">Agility Robotics</a> as a Robotics Software Engineer. My work at Agility has spanned a variety of topics from manifold optimization, whole body inverse kinematics, reinforcement learning, contact simulation, subsystem modeling and perception simulation. I currently am on the Simulation team. <br><br>Before joining Agility I was an undergrad at Oregon State University where I did research on bipedal locomotion coadvised by <a href="https://engineering.oregonstate.edu/people/jonathan-hurst">Jonathan Hurst</a> and <a href="https://engineering.oregonstate.edu/people/alan-fern">Alan Fern</a>. At OSU I spearheaded the transition of the <a href="https://mime.engineering.oregonstate.edu/research/drl/">Dynamic Robotics Laboratory</a> from a hardware focused research group to a software and controls focused group with some of the earliest sim-to-real reinforcement learning results for bipedal running. <br><br>My interests broadly lie in the intersection of optimization, simulation and end-to-end control of agile and dexterous humanoid robots.',
+  email: "autranemorais@gmail.com",
+  imageUrl: "/images/profile.jpeg",
+  googleScholarUrl: "https://scholar.google.com/citations?user=iicB8nQAAAAJ&hl=en",
+  githubUsername: "hyparxis",
+  linkedinUsername: "hyparxis",
+  twitterUsername: "pnwpedro",
   // blogUrl: "https://",
   // cvUrl: "https://",
   // institutionUrl: "https://www.stanford.edu",

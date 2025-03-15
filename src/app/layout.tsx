@@ -64,14 +64,9 @@ export default function RootLayout({
               )}
             </div>
             <div className="mb-4">
-              <p className="text-sm text-neutral-500 dark:text-neutral-500 justify">
-                Built with{" "}
-                <a
-                  href="https://github.com/tovacinni/research-website-template"
-                  className="underline hover:text-neutral-800 dark:hover:text-neutral-300 transition-colors"
-                >
-                  research-website-template
-                </a>
+              <p className="text-sm text-neutral-500 dark:text-neutral-500 italic font-serif">
+                "What I cannot create, I do not understand."
+                <span className="text-xs block mt-1 text-right">— Richard Feynman</span>
               </p>
             </div>
           </div>

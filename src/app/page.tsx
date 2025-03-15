@@ -1,150 +1,66 @@
-import { Section, sectionOrder } from "@/data/section-order";
-import { BlogPosts } from "@/components/sections/blog-posts";
-import { ProfileSection } from "@/components/profile-section";
-import { NewsEntry } from "@/components/news-entry";
-import { EducationEntry } from "@/components/education-entry";
-import { PublicationEntry } from "@/components/publication-entry";
-import { ExperienceEntry } from "@/components/experience-entry";
-import { PortfolioEntry } from "@/components/portfolio-entry";
-import { BlogPostEntry } from "@/components/blog-post-entry";
-import { aboutMe } from "@/data/aboutme";
-import { newsData } from "@/data/news";
-import { educationData } from "@/data/education";
-import { publicationData } from "@/data/publication";
-import { experienceData } from "@/data/experience";
-import { portfolioData } from "@/data/portfolio";
 import { blogPostData } from "@/data/blogposts";
+import Image from "next/image";
+import Link from "next/link";
+import { ProfileSection } from "@/components/profile-section";
+import { aboutMe } from "@/data/aboutme";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-screen-lg mx-auto px-8 py-24">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-          <div className="col-span-12 md:col-span-4 space-y-12 mb-8 md:mb-0">
+          {/* Left Column - Profile Section */}
+          <div className="col-span-12 md:col-span-4 mb-8 md:mb-0">
             <div className="md:sticky top-20 space-y-8">
               <ProfileSection aboutMe={aboutMe} />
             </div>
           </div>
+
+          {/* Right Column - Blog Content */}
           <div className="col-span-12 md:col-span-7 md:col-start-6 space-y-24">
-            {aboutMe.description && (
-              <section id="about" className="scroll-mt-20">
-                <p
-                  className="font-serif text-sm leading-relaxed text-zinc-700 [&_a]:underline [&_a]:text-zinc-900 [&_a:hover]:text-zinc-600"
-                  dangerouslySetInnerHTML={{ __html: aboutMe.description }}
-                />
-              </section>
-            )}
-            {sectionOrder.map((sectionName) => {
-              switch (sectionName) {
-                case Section.News:
-                  return (
-                    newsData.length > 0 && (
-                      <section key={sectionName}>
-                        <h2 className="font-serif text-l mb-12 tracking-wide uppercase">
-                          News
-                        </h2>
-                        <div className="space-y-12">
-                          {newsData.map((news, index) => (
-                            <div key={index}>
-                              <NewsEntry news={news} />
-                            </div>
-                          ))}
+            <div className="space-y-8">
+              {blogPostData.map((post, index) => (
+                <div key={index} className="group">
+                  <Link href={`/blog/${post.slug}`}>
+                    <div className="flex flex-col sm:flex-row gap-6">
+                      {post.imageUrl && (
+                        <div className="w-full sm:w-1/4 min-w-[120px] overflow-hidden rounded-lg">
+                          <Image
+                            src={post.imageUrl}
+                            alt={post.title}
+                            width={160}
+                            height={160}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                         </div>
-                      </section>
-                    )
-                  );
-                case Section.Education:
-                  return (
-                    educationData.length > 0 && (
-                      <section key={sectionName}>
-                        <h2 className="font-serif text-zinc-700 mb-12 tracking-wide uppercase">
-                          Education
+                      )}
+                      
+                      <div className="flex-1 space-y-2">
+                        <p className="text-xs text-zinc-500 font-sans tracking-wide">
+                          {new Date(post.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                        
+                        <h2 className="font-serif text-xl text-zinc-800 group-hover:text-zinc-600 transition-colors">
+                          {post.title}
                         </h2>
-                        <div className="space-y-12">
-                          {educationData.map((education, index) => (
-                            <EducationEntry key={index} education={education} />
-                          ))}
-                        </div>
-                      </section>
-                    )
-                  );
-                case Section.Publication:
-                  return (
-                    publicationData.length > 0 && (
-                      <section key={sectionName}>
-                        <h2 className="font-serif text-l mb-12 tracking-wide uppercase">
-                          Publications
-                        </h2>
-                        <div className="space-y-12">
-                          {publicationData.map((publication, index) => (
-                            <div key={index}>
-                              <PublicationEntry publication={publication} />
-                              {index < publicationData.length - 1 && (
-                                <div className="h-px bg-zinc-200 my-8" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )
-                  );
-                case Section.Experience:
-                  return (
-                    experienceData.length > 0 && (
-                      <section key={sectionName}>
-                        <h2 className="font-serif text-md mb-12 tracking-wide uppercase">
-                          Experience
-                        </h2>
-                        <div className="space-y-12">
-                          {experienceData.map((experience, index) => (
-                            <ExperienceEntry
-                              key={index}
-                              experience={experience}
-                            />
-                          ))}
-                        </div>
-                      </section>
-                    )
-                  );
-                case Section.Portfolio:
-                  return (
-                    portfolioData.length > 0 && (
-                      <section key={sectionName}>
-                        <h2 className="font-serif text-md mb-12 tracking-wide uppercase">
-                          Portfolio
-                        </h2>
-                        <div className="space-y-12">
-                          {portfolioData.map((portfolio, index) => (
-                            <PortfolioEntry key={index} portfolio={portfolio} />
-                          ))}
-                        </div>
-                      </section>
-                    )
-                  );
-                case Section.BlogPosts:
-                  return (
-                    blogPostData.length > 0 && (
-                      <section key={sectionName} id="blog-posts" className="scroll-mt-20">
-                        <h2 className="font-serif text-l mb-12 tracking-wide uppercase">
-                          Blog Posts
-                        </h2>
-                        <div className="space-y-12">
-                          {blogPostData.map((post, index) => (
-                            <div key={index}>
-                              <BlogPostEntry post={post} />
-                              {index < blogPostData.length - 1 && (
-                                <div className="h-px bg-zinc-200 my-8" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )
-                  );
-                default:
-                  return null;
-              }
-            })}
+                        
+                        <p className="text-sm text-zinc-600 leading-relaxed font-serif">
+                          {post.summary}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                  
+                  {index < blogPostData.length - 1 && (
+                    <div className="h-px bg-zinc-100 my-8" />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
