@@ -62,7 +62,7 @@ export default async function BlogPost({
   
   return (
     <div className="min-h-screen">
-      <div className="max-w-screen-lg mx-auto px-8 py-24">
+      <div className="max-w-screen-lg mx-auto px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Left Column - Back Button */}
           <div className="col-span-12 md:col-span-3 mb-8 md:mb-0">
@@ -83,7 +83,7 @@ export default async function BlogPost({
           {/* Right Column - Content */}
           <div className="col-span-12 md:col-span-8 md:col-start-4">
             <article>
-              <header className="mb-12">
+              <header className="mb-10">
                 <h1 className="font-serif text-2xl mb-4">{data.title}</h1>
                 <div className="text-xs text-zinc-500">{data.date}</div>
               </header>

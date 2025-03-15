@@ -15,7 +15,7 @@ import { portfolioData } from "@/data/portfolio";
 export default function AboutPage() {
   return (
     <div className="min-h-screen">
-      <div className="max-w-screen-lg mx-auto px-8 py-24">
+      <div className="max-w-screen-lg mx-auto px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
           <div className="col-span-12 md:col-span-4 mb-8 md:mb-0">
             <div className="md:sticky top-20 space-y-8">
