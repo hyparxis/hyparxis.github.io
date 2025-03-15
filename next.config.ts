@@ -9,6 +9,7 @@ const withMDX = createMDX({
 })
 
 const nextConfig: NextConfig = {
+  output: 'export',
   images: {
     remotePatterns: [
       {
@@ -16,8 +17,11 @@ const nextConfig: NextConfig = {
         hostname: 'raw.githubusercontent.com',
       },
     ],
+    unoptimized: true,
   },
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+  basePath: process.env.NODE_ENV === 'production' ? '/your-repo-name' : '',
+  trailingSlash: true,
 }
 
 export default withMDX(nextConfig)
