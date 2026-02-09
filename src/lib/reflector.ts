@@ -12,7 +12,6 @@ import {
   NoToneMapping,
   PerspectiveCamera,
   Plane,
-  Shader,
   Vector3,
   Vector4,
   WebGLRenderTarget,
@@ -20,6 +19,12 @@ import {
   LinearSRGBColorSpace,
   type BufferGeometry,
 } from "three";
+
+type ReflectorShader = {
+  vertexShader: string;
+  fragmentShader: string;
+  uniforms: Record<string, { value: unknown }>;
+};
 
 type ReflectorOptions = {
   color?: number;
@@ -32,15 +37,19 @@ type ReflectorOptions = {
 
 export class Reflector extends Mesh {
   declare camera: PerspectiveCamera;
+  declare isReflector: boolean;
+  private renderTarget: WebGLRenderTarget;
+  private reflectorMaterial: MeshPhysicalMaterial & {
+    uniforms: Record<string, { value: unknown }>;
+    userData: Record<string, unknown>;
+  };
 
   constructor(geometry: BufferGeometry, options: ReflectorOptions = {}) {
     super(geometry);
 
     this.isReflector = true;
-    this.type = "Reflector";
     this.camera = new PerspectiveCamera();
 
-    const scope = this;
     const color = options.color !== undefined ? new Color(options.color) : new Color(0x7f7f7f);
     const textureWidth = options.textureWidth || 1024;
     const textureHeight = options.textureHeight || 1024;
@@ -63,15 +72,22 @@ export class Reflector extends Mesh {
     const textureMatrix = new Matrix4();
     const virtualCamera = this.camera;
 
-    const renderTarget = new WebGLRenderTarget(textureWidth, textureHeight, {
+    this.renderTarget = new WebGLRenderTarget(textureWidth, textureHeight, {
       samples: multisample,
       type: HalfFloatType,
     });
 
-    this.material = new MeshPhysicalMaterial({ map: blendTexture, color });
-    this.material.uniforms = { tDiffuse: { value: renderTarget.texture }, textureMatrix: { value: textureMatrix } };
+    this.reflectorMaterial = new MeshPhysicalMaterial({ map: blendTexture, color }) as MeshPhysicalMaterial & {
+      uniforms: Record<string, { value: unknown }>;
+      userData: Record<string, unknown>;
+    };
+    this.reflectorMaterial.uniforms = {
+      tDiffuse: { value: this.renderTarget.texture },
+      textureMatrix: { value: textureMatrix },
+    };
+    this.material = this.reflectorMaterial;
 
-    this.material.onBeforeCompile = (shader: Shader) => {
+    this.material.onBeforeCompile = (shader: ReflectorShader) => {
       const bodyStart = shader.vertexShader.indexOf("void main() {");
       shader.vertexShader =
         shader.vertexShader.slice(0, bodyStart) +
@@ -86,19 +102,19 @@ export class Reflector extends Mesh {
         shader.fragmentShader.slice(fragStart - 1, -1) +
         "	gl_FragColor = vec4( mix( texture2DProj( tDiffuse,  vUv3 ).rgb, gl_FragColor.rgb , 0.5), 1.0 );\n}";
 
-      shader.uniforms.tDiffuse = { value: renderTarget.texture };
+      shader.uniforms.tDiffuse = { value: this.renderTarget.texture };
       shader.uniforms.textureMatrix = { value: textureMatrix };
-      this.material.uniforms = shader.uniforms;
-      this.material.userData.shader = shader;
+      this.reflectorMaterial.uniforms = shader.uniforms;
+      this.reflectorMaterial.userData.shader = shader;
     };
 
     this.receiveShadow = true;
 
-    this.onBeforeRender = function (renderer, scene, camera) {
-      reflectorWorldPosition.setFromMatrixPosition(scope.matrixWorld);
+    this.onBeforeRender = (renderer, scene, camera) => {
+      reflectorWorldPosition.setFromMatrixPosition(this.matrixWorld);
       cameraWorldPosition.setFromMatrixPosition(camera.matrixWorld);
 
-      rotationMatrix.extractRotation(scope.matrixWorld);
+      rotationMatrix.extractRotation(this.matrixWorld);
       normal.set(0, 0, 1);
       normal.applyMatrix4(rotationMatrix);
 
@@ -123,7 +139,8 @@ export class Reflector extends Mesh {
       virtualCamera.up.reflect(normal);
       virtualCamera.lookAt(target);
 
-      virtualCamera.far = camera.far;
+      const perspectiveCamera = camera as PerspectiveCamera;
+      virtualCamera.far = perspectiveCamera.far;
 
       virtualCamera.updateMatrixWorld();
       virtualCamera.projectionMatrix.copy(camera.projectionMatrix);
@@ -131,7 +148,7 @@ export class Reflector extends Mesh {
       textureMatrix.set(0.5, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0);
       textureMatrix.multiply(virtualCamera.projectionMatrix);
       textureMatrix.multiply(virtualCamera.matrixWorldInverse);
-      textureMatrix.multiply(scope.matrixWorld);
+      textureMatrix.multiply(this.matrixWorld);
 
       reflectorPlane.setFromNormalAndCoplanarPoint(normal, reflectorWorldPosition);
       reflectorPlane.applyMatrix4(virtualCamera.matrixWorldInverse);
@@ -151,7 +168,7 @@ export class Reflector extends Mesh {
       projectionMatrix.elements[10] = clipPlane.z + 1.0 - clipBias;
       projectionMatrix.elements[14] = clipPlane.w;
 
-      scope.visible = false;
+      this.visible = false;
 
       const currentRenderTarget = renderer.getRenderTarget();
       const currentXrEnabled = renderer.xr.enabled;
@@ -164,7 +181,7 @@ export class Reflector extends Mesh {
       renderer.outputColorSpace = LinearSRGBColorSpace;
       renderer.toneMapping = NoToneMapping;
 
-      renderer.setRenderTarget(renderTarget);
+      renderer.setRenderTarget(this.renderTarget);
       renderer.state.buffers.depth.setMask(true);
 
       if (renderer.autoClear === false) renderer.clear();
@@ -177,21 +194,26 @@ export class Reflector extends Mesh {
 
       renderer.setRenderTarget(currentRenderTarget);
 
-      const viewport = (camera as any).viewport;
+      const cameraWithViewport = camera as PerspectiveCamera & { viewport?: Vector4 };
+      const viewport = cameraWithViewport.viewport;
       if (viewport !== undefined) {
         renderer.state.viewport(viewport);
       }
 
-      scope.visible = true;
+      this.visible = true;
     };
+  }
 
-    this.getRenderTarget = function () {
-      return renderTarget;
-    };
+  getRenderTarget() {
+    return this.renderTarget;
+  }
 
-    this.dispose = function () {
-      renderTarget.dispose();
-      scope.material.dispose();
-    };
+  dispose() {
+    this.renderTarget.dispose();
+    if (Array.isArray(this.material)) {
+      this.material.forEach((material) => material.dispose());
+    } else {
+      this.material.dispose();
+    }
   }
 }

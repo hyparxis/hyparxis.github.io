@@ -1,87 +1,201 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { MainModule, MjData, MjModel } from "mujoco-js/dist/mujoco_wasm";
 import { Reflector } from "@/lib/reflector";
 
-const SCENE_XML_URL =
-  "https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/main/unitree_g1/scene_with_hands.xml";
+const SCENE_XML_URL = 
+  "/demo/scene.xml";
+  // "https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/main/unitree_g1/scene_with_hands.xml";
+
 const ASSET_BASE_URL =
   "https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/main/unitree_g1/";
 
-type MujocoModule = {
-  FS: {
-    mkdir: (path: string) => void;
-    mount: (fs: unknown, opts: { root: string }, mountPoint: string) => void;
-    writeFile: (path: string, data: string | Uint8Array) => void;
-  };
-  MEMFS: unknown;
-  MjModel: {
-    loadFromXML: (path: string) => MjModel;
-  };
-  MjData: new (model: MjModel) => MjData;
-  mjtGeom: {
-    mjGEOM_PLANE: number;
-    mjGEOM_SPHERE: number;
-    mjGEOM_CAPSULE: number;
-    mjGEOM_ELLIPSOID: number;
-    mjGEOM_CYLINDER: number;
-    mjGEOM_BOX: number;
-    mjGEOM_MESH: number;
-  };
-  mj_step: (model: MjModel, data: MjData) => void;
-  mj_resetData: (model: MjModel, data: MjData) => void;
-};
-
-type MjModel = {
-  nbody: number;
-  ngeom: number;
-  nmesh: number;
-  nlight: number;
-  geom_type: Int32Array;
-  geom_dataid: Int32Array;
-  geom_bodyid: Int32Array;
-  geom_group: Int32Array;
-  geom_pos: Float32Array;
-  geom_quat: Float32Array;
-  geom_size: Float32Array;
-  geom_rgba: Float32Array;
-  geom_matid: Int32Array;
-  mat_rgba: Float32Array;
-  mat_texid: Int32Array;
-  mat_texrepeat: Float32Array;
-  mat_specular: Float32Array;
-  mat_reflectance: Float32Array;
-  mat_shininess: Float32Array;
-  mat_metallic: Float32Array;
-  tex_width: Int32Array;
-  tex_height: Int32Array;
-  tex_adr: Int32Array;
-  tex_nchannel: Int32Array;
-  tex_data: Uint8Array;
-  light_type: Int32Array;
-  light_attenuation: Float32Array;
-  mesh_vertadr: Int32Array;
-  mesh_vertnum: Int32Array;
-  mesh_faceadr: Int32Array;
-  mesh_facenum: Int32Array;
-  mesh_vert: Float32Array;
-  mesh_face: Int32Array;
-  delete: () => void;
-};
-
-type MjData = {
-  time: number;
-  xpos: Float32Array;
-  xquat: Float32Array;
-  light_xpos: Float32Array;
-  light_xdir: Float32Array;
-  delete: () => void;
-};
+type MujocoModule = Pick<
+  MainModule,
+  "FS" | "MEMFS" | "MjModel" | "MjData" | "mjtGeom" | "mj_step" | "mj_resetData"
+>;
 
 type ThreeBundle = {
   THREE: typeof import("three");
-  OrbitControls: typeof import("three/examples/jsm/controls/OrbitControls").OrbitControls;
+  OrbitControls: typeof import("three/examples/jsm/controls/OrbitControls.js").OrbitControls;
   Reflector: typeof Reflector;
+};
+
+const getPosition = (
+  buffer: Float32Array,
+  index: number,
+  target: import("three").Vector3,
+  swizzle = true
+) => {
+  if (swizzle) {
+    return target.set(buffer[index * 3], buffer[index * 3 + 2], -buffer[index * 3 + 1]);
+  }
+  return target.set(buffer[index * 3], buffer[index * 3 + 1], buffer[index * 3 + 2]);
+};
+
+const getQuaternion = (
+  buffer: Float32Array,
+  index: number,
+  target: import("three").Quaternion,
+  swizzle = true
+) => {
+  if (swizzle) {
+    return target.set(
+      -buffer[index * 4 + 1],
+      -buffer[index * 4 + 3],
+      buffer[index * 4 + 2],
+      -buffer[index * 4 + 0]
+    );
+  }
+  return target.set(
+    buffer[index * 4 + 0],
+    buffer[index * 4 + 1],
+    buffer[index * 4 + 2],
+    buffer[index * 4 + 3]
+  );
+};
+
+const swizzleVector = (vector: import("three").Vector3, target: import("three").Vector3) =>
+  target.set(vector.x, vector.z, -vector.y);
+
+const CAMERA_ASPECT = 4 / 3;
+
+const getNameFromTable = (table: Uint8Array | undefined, addr: number) => {
+  if (!table || addr < 0 || addr >= table.length) return "";
+  let end = addr;
+  while (end < table.length && table[end] !== 0) end += 1;
+  return new TextDecoder().decode(table.subarray(addr, end));
+};
+
+type CompilerDirs = {
+  meshdir?: string;
+  texturedir?: string;
+  assetdir?: string;
+};
+
+const resolveAssetUrl = (baseUrl: string, relPath: string) => `${baseUrl}${relPath}`;
+
+const fetchAssetWithFallback = async (baseUrl: string, relPath: string) => {
+  const candidates = [resolveAssetUrl(baseUrl, relPath)];
+  if (!relPath.includes("/")) {
+    candidates.push(resolveAssetUrl(baseUrl, `assets/${relPath}`));
+  }
+  for (const url of candidates) {
+    const res = await fetch(url);
+    if (res.ok) return { url, response: res };
+  }
+  const lastUrl = candidates[candidates.length - 1];
+  const lastRes = await fetch(lastUrl);
+  return { url: lastUrl, response: lastRes };
+};
+
+const getIncludeBaseUrl = (xmlUrl: string) => {
+  try {
+    const url = new URL(xmlUrl, window.location.origin);
+    const parts = url.pathname.split("/");
+    parts.pop();
+    return `${url.origin}${parts.join("/")}/`;
+  } catch {
+    return ASSET_BASE_URL;
+  }
+};
+
+const resolveRelativePath = (basePath: string, refPath: string) => {
+  if (refPath.startsWith("/")) {
+    refPath = refPath.slice(1);
+  }
+  if (refPath.startsWith("http://") || refPath.startsWith("https://")) {
+    return refPath;
+  }
+  const baseDir = basePath.split("/").slice(0, -1);
+  const parts = [...baseDir, ...refPath.split("/")];
+  const stack: string[] = [];
+  for (const part of parts) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      stack.pop();
+    } else {
+      stack.push(part);
+    }
+  }
+  return stack.join("/");
+};
+
+const parseCompilerDirs = (xmlText: string): CompilerDirs => {
+  const dirs: CompilerDirs = {};
+  const match = xmlText.match(/<compiler[^>]*>/);
+  if (!match) return dirs;
+  const tag = match[0];
+  const meshdir = tag.match(/meshdir="([^"]+)"/);
+  const texturedir = tag.match(/texturedir="([^"]+)"/);
+  const assetdir = tag.match(/assetdir="([^"]+)"/);
+  if (meshdir) dirs.meshdir = meshdir[1].replace(/^\/+/, "");
+  if (texturedir) dirs.texturedir = texturedir[1].replace(/^\/+/, "");
+  if (assetdir) dirs.assetdir = assetdir[1].replace(/^\/+/, "");
+  return dirs;
+};
+
+const resolveAssetPath = (basePath: string, refPath: string, dirs: CompilerDirs) => {
+  if (refPath.startsWith("http://") || refPath.startsWith("https://")) {
+    return refPath;
+  }
+  const ext = refPath.split(".").pop()?.toLowerCase() || "";
+  const isMesh = ["stl", "obj", "mesh", "msh", "ply"].includes(ext);
+  const isTexture = ["png", "jpg", "jpeg", "bmp", "tga"].includes(ext);
+
+  if (!refPath.includes("/")) {
+    if (isMesh && dirs.meshdir) {
+      refPath = `${dirs.meshdir}/${refPath}`;
+    } else if (isTexture && dirs.texturedir) {
+      refPath = `${dirs.texturedir}/${refPath}`;
+    } else if (dirs.assetdir) {
+      refPath = `${dirs.assetdir}/${refPath}`;
+    }
+  }
+  return resolveRelativePath(basePath, refPath);
+};
+
+const extractAssetPaths = (xmlText: string) => {
+  const assetPaths = new Set<string>();
+  const includePaths = new Set<string>();
+  const regex = /file="([^"]+)"/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(xmlText)) !== null) {
+    const path = match[1];
+    if (path.startsWith("http://") || path.startsWith("https://")) continue;
+    if (path.endsWith(".xml")) {
+      includePaths.add(path);
+    } else {
+      assetPaths.add(path);
+    }
+  }
+  return { assetPaths: Array.from(assetPaths), includePaths: Array.from(includePaths) };
+};
+
+const ensureDir = (mujoco: MujocoModule, filePath: string) => {
+  const parts = filePath.split("/").slice(0, -1);
+  let current = "";
+  for (const part of parts) {
+    if (!part) continue;
+    current += `/${part}`;
+    try {
+      mujoco.FS.mkdir(current);
+    } catch {
+      // Ignore if it already exists.
+    }
+  }
+};
+
+const isBinaryAsset = (path: string) => {
+  const lower = path.toLowerCase();
+  return (
+    lower.endsWith(".png") ||
+    lower.endsWith(".jpg") ||
+    lower.endsWith(".jpeg") ||
+    lower.endsWith(".stl") ||
+    lower.endsWith(".skn")
+  );
 };
 
 export default function DemoPage() {
@@ -94,9 +208,12 @@ export default function DemoPage() {
   const lastUiUpdateRef = useRef<number>(0);
   const threeRef = useRef<ThreeBundle | null>(null);
   const rendererRef = useRef<import("three").WebGLRenderer | null>(null);
+  const cameraRendererRef = useRef<import("three").WebGLRenderer | null>(null);
   const sceneRef = useRef<import("three").Scene | null>(null);
   const cameraRef = useRef<import("three").PerspectiveCamera | null>(null);
-  const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls").OrbitControls | null>(
+  const mujocoCameraRef = useRef<import("three").PerspectiveCamera | null>(null);
+  const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
+  const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | null>(
     null
   );
   const meshesRef = useRef<Array<import("three").Object3D | null>>([]);
@@ -109,51 +226,72 @@ export default function DemoPage() {
   const [running, setRunning] = useState(false);
   const [simTime, setSimTime] = useState(0);
   const [bodyCount, setBodyCount] = useState(0);
+  const [cameraCount, setCameraCount] = useState(0);
+  const [cameraNames, setCameraNames] = useState<string[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState(0);
+  const selectedCameraRef = useRef(0);
+  const mainRef = useRef<HTMLElement>(null);
+  const [availableHeight, setAvailableHeight] = useState<number | null>(null);
+  const sceneWrapRef = useRef<HTMLDivElement>(null);
+  const cameraWrapRef = useRef<HTMLDivElement>(null);
+  const [cameraViewportSize, setCameraViewportSize] = useState({ width: 0, height: 0 });
 
-  const getPosition = (
-    buffer: Float32Array,
-    index: number,
-    target: import("three").Vector3,
-    swizzle = true
-  ) => {
-    if (swizzle) {
-      return target.set(buffer[index * 3], buffer[index * 3 + 2], -buffer[index * 3 + 1]);
-    }
-    return target.set(buffer[index * 3], buffer[index * 3 + 1], buffer[index * 3 + 2]);
-  };
 
-  const getQuaternion = (
-    buffer: Float32Array,
-    index: number,
-    target: import("three").Quaternion,
-    swizzle = true
-  ) => {
-    if (swizzle) {
-      return target.set(
-        -buffer[index * 4 + 1],
-        -buffer[index * 4 + 3],
-        buffer[index * 4 + 2],
-        -buffer[index * 4 + 0]
-      );
+  const getCameraNames = useCallback((model: MjModel) => {
+    const names: string[] = [];
+    const count = model.ncam ?? 0;
+    for (let i = 0; i < count; i += 1) {
+      const addr = model.name_camadr?.[i] ?? -1;
+      const name = addr >= 0 ? getNameFromTable(model.names, addr) : "";
+      names.push(name || `Camera ${i + 1}`);
     }
-    return target.set(
-      buffer[index * 4 + 0],
-      buffer[index * 4 + 1],
-      buffer[index * 4 + 2],
-      buffer[index * 4 + 3]
+    return names;
+  }, []);
+
+  const updateMujocoCamera = useCallback((
+    THREE: typeof import("three"),
+    model: MjModel,
+    data: MjData,
+    index: number,
+    camera: import("three").PerspectiveCamera
+  ) => {
+    if (!data.cam_xpos || !data.cam_xmat) return;
+    const pos = new THREE.Vector3();
+    getPosition(data.cam_xpos, index, pos);
+    const base = index * 9;
+    // cam_xmat is row-major 3x3; columns are camera axes in world coords.
+    const mujoUp = new THREE.Vector3(
+      data.cam_xmat[base + 1],
+      data.cam_xmat[base + 4],
+      data.cam_xmat[base + 7]
     );
-  };
+    const mujoZ = new THREE.Vector3(
+      data.cam_xmat[base + 2],
+      data.cam_xmat[base + 5],
+      data.cam_xmat[base + 8]
+    );
+    const forward = swizzleVector(mujoZ.multiplyScalar(-1), new THREE.Vector3());
+    const up = swizzleVector(mujoUp, new THREE.Vector3());
+    camera.position.copy(pos);
+    camera.up.copy(up);
+    camera.lookAt(pos.clone().add(forward));
 
-  const mujocoType = (name: keyof MujocoModule["mjtGeom"]) => {
+    if (model.cam_fovy && model.cam_fovy[index]) {
+      camera.fov = model.cam_fovy[index];
+      camera.updateProjectionMatrix();
+    }
+  }, []);
+
+  const mujocoType = useCallback((name: keyof MujocoModule["mjtGeom"]) => {
     const mujoco = mujocoRef.current;
     if (!mujoco) return -1;
     const entry = mujoco.mjtGeom[name];
     return typeof entry === "number" ? entry : entry.value;
-  };
+  }, []);
 
-  const createGeomMeshes = (
+  const createGeomMeshes = useCallback((
     THREE: typeof import("three"),
-    Reflector: typeof import("three/examples/jsm/objects/Reflector").Reflector,
+    ReflectorCtor: typeof Reflector,
     model: MjModel,
     scene: import("three").Scene
   ) => {
@@ -313,7 +451,7 @@ export default function DemoPage() {
       }
 
       if (type === mujocoType("mjGEOM_PLANE")) {
-        const reflector = new Reflector(new THREE.PlaneGeometry(100, 100), {
+        const reflector = new ReflectorCtor(new THREE.PlaneGeometry(100, 100), {
           clipBias: 0.003,
           textureWidth: 1024,
           textureHeight: 1024,
@@ -363,17 +501,22 @@ export default function DemoPage() {
         light.angle = 1.11;
         light.penumbra = 0.5;
       }
-      if ("decay" in light) {
-        (light as THREE.PointLight).decay = model.light_attenuation[l] * 100;
+      if (light instanceof THREE.PointLight) {
+        light.decay = model.light_attenuation[l] * 100;
       }
       light.castShadow = true;
       light.intensity = light.intensity * Math.PI * 1.0;
-      const shadow = (light as any).shadow;
+      const shadow = "shadow" in light ? (light as { shadow?: import("three").LightShadow }).shadow : undefined;
       if (shadow) {
         shadow.mapSize.width = 1024;
         shadow.mapSize.height = 1024;
-        shadow.camera.near = 0.1;
-        shadow.camera.far = 10;
+        if (
+          shadow.camera instanceof THREE.PerspectiveCamera ||
+          shadow.camera instanceof THREE.OrthographicCamera
+        ) {
+          shadow.camera.near = 0.1;
+          shadow.camera.far = 10;
+        }
       }
 
       if (bodies[0]) {
@@ -401,9 +544,9 @@ export default function DemoPage() {
     rootRef.current = root;
     lightsRef.current = lights;
     return meshes;
-  };
+  }, [mujocoType]);
 
-  const updateBodies = (model: MjModel, data: MjData) => {
+  const updateBodies = useCallback((model: MjModel, data: MjData) => {
     const bodies = bodiesRef.current;
     if (!bodies.length) return;
     for (let b = 0; b < model.nbody; b += 1) {
@@ -413,9 +556,9 @@ export default function DemoPage() {
       getQuaternion(data.xquat, b, body.quaternion);
       body.updateMatrixWorld();
     }
-  };
+  }, []);
 
-  const updateLights = (model: MjModel, data: MjData) => {
+  const updateLights = useCallback((model: MjModel, data: MjData) => {
     const lights = lightsRef.current;
     const three = threeRef.current;
     if (!three) return;
@@ -428,13 +571,14 @@ export default function DemoPage() {
       getPosition(data.light_xdir, l, target);
       light.lookAt(target.add(light.position));
     }
-  };
+  }, []);
 
-  const downloadAssetsToFS = async (
+  const downloadAssetsToFS = useCallback(async (
     mujoco: MujocoModule,
     rootXmlFile: string,
     rootXmlText: string,
-    baseUrl: string
+    assetBaseUrl: string,
+    includeBaseUrl: string
   ) => {
     const pending = new Map<string, { text: string; dirs: CompilerDirs }>();
     pending.set(rootXmlFile, { text: rootXmlText, dirs: parseCompilerDirs(rootXmlText) });
@@ -459,7 +603,7 @@ export default function DemoPage() {
       for (const includePath of includePaths) {
         const resolvedInclude = resolveRelativePath(xmlPath, includePath);
         if (seen.has(resolvedInclude) || pending.has(resolvedInclude)) continue;
-        const includeUrl = resolveAssetUrl(baseUrl, resolvedInclude);
+        const includeUrl = resolveAssetUrl(includeBaseUrl, resolvedInclude);
         const includeRes = await fetch(includeUrl);
         if (!includeRes.ok) {
           throw new Error(`Failed to fetch include ${includeUrl}: ${includeRes.status}`);
@@ -471,7 +615,7 @@ export default function DemoPage() {
       for (const relPath of assetPaths) {
         const resolvedAsset = resolveAssetPath(xmlPath, relPath, currentDirs);
         if (seen.has(resolvedAsset)) continue;
-        const { url, response } = await fetchAssetWithFallback(baseUrl, resolvedAsset);
+        const { url, response } = await fetchAssetWithFallback(assetBaseUrl, resolvedAsset);
         const targetPath = `/working/${resolvedAsset}`;
         ensureDir(mujoco, targetPath);
         const isBinary = isBinaryAsset(resolvedAsset);
@@ -488,131 +632,14 @@ export default function DemoPage() {
         seen.add(resolvedAsset);
       }
     }
-  };
+  }, []);
 
-  const resolveAssetUrl = (baseUrl: string, relPath: string) => `${baseUrl}${relPath}`;
+  
 
-  const fetchAssetWithFallback = async (baseUrl: string, relPath: string) => {
-    const candidates = [resolveAssetUrl(baseUrl, relPath)];
-    if (!relPath.includes("/")) {
-      candidates.push(resolveAssetUrl(baseUrl, `assets/${relPath}`));
-    }
-    for (const url of candidates) {
-      const res = await fetch(url);
-      if (res.ok) return { url, response: res };
-    }
-    const lastUrl = candidates[candidates.length - 1];
-    const lastRes = await fetch(lastUrl);
-    return { url: lastUrl, response: lastRes };
-  };
-
-  const resolveRelativePath = (basePath: string, refPath: string) => {
-    if (refPath.startsWith("/")) {
-      refPath = refPath.slice(1);
-    }
-    if (refPath.startsWith("http://") || refPath.startsWith("https://")) {
-      return refPath;
-    }
-    const baseDir = basePath.split("/").slice(0, -1);
-    const parts = [...baseDir, ...refPath.split("/")];
-    const stack: string[] = [];
-    for (const part of parts) {
-      if (!part || part === ".") continue;
-      if (part === "..") {
-        stack.pop();
-      } else {
-        stack.push(part);
-      }
-    }
-    return stack.join("/");
-  };
-
-  type CompilerDirs = {
-    meshdir?: string;
-    texturedir?: string;
-    assetdir?: string;
-  };
-
-  const parseCompilerDirs = (xmlText: string): CompilerDirs => {
-    const dirs: CompilerDirs = {};
-    const match = xmlText.match(/<compiler[^>]*>/);
-    if (!match) return dirs;
-    const tag = match[0];
-    const meshdir = tag.match(/meshdir="([^"]+)"/);
-    const texturedir = tag.match(/texturedir="([^"]+)"/);
-    const assetdir = tag.match(/assetdir="([^"]+)"/);
-    if (meshdir) dirs.meshdir = meshdir[1].replace(/^\/+/, "");
-    if (texturedir) dirs.texturedir = texturedir[1].replace(/^\/+/, "");
-    if (assetdir) dirs.assetdir = assetdir[1].replace(/^\/+/, "");
-    return dirs;
-  };
-
-  const resolveAssetPath = (basePath: string, refPath: string, dirs: CompilerDirs) => {
-    if (refPath.startsWith("http://") || refPath.startsWith("https://")) {
-      return refPath;
-    }
-    const ext = refPath.split(".").pop()?.toLowerCase() || "";
-    const isMesh = ["stl", "obj", "mesh", "msh", "ply"].includes(ext);
-    const isTexture = ["png", "jpg", "jpeg", "bmp", "tga"].includes(ext);
-
-    if (!refPath.includes("/")) {
-      if (isMesh && dirs.meshdir) {
-        refPath = `${dirs.meshdir}/${refPath}`;
-      } else if (isTexture && dirs.texturedir) {
-        refPath = `${dirs.texturedir}/${refPath}`;
-      } else if (dirs.assetdir) {
-        refPath = `${dirs.assetdir}/${refPath}`;
-      }
-    }
-    return resolveRelativePath(basePath, refPath);
-  };
-
-  const extractAssetPaths = (xmlText: string) => {
-    const assetPaths = new Set<string>();
-    const includePaths = new Set<string>();
-    const regex = /file="([^"]+)"/g;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(xmlText)) !== null) {
-      const path = match[1];
-      if (path.startsWith("http://") || path.startsWith("https://")) continue;
-      if (path.endsWith(".xml")) {
-        includePaths.add(path);
-      } else {
-        assetPaths.add(path);
-      }
-    }
-    return { assetPaths: Array.from(assetPaths), includePaths: Array.from(includePaths) };
-  };
-
-
-  const ensureDir = (mujoco: MujocoModule, filePath: string) => {
-    const parts = filePath.split("/").slice(0, -1);
-    let current = "";
-    for (const part of parts) {
-      if (!part) continue;
-      current += `/${part}`;
-      try {
-        mujoco.FS.mkdir(current);
-      } catch {
-        // Ignore if it already exists.
-      }
-    }
-  };
-
-  const isBinaryAsset = (path: string) => {
-    const lower = path.toLowerCase();
-    return (
-      lower.endsWith(".png") ||
-      lower.endsWith(".jpg") ||
-      lower.endsWith(".jpeg") ||
-      lower.endsWith(".stl") ||
-      lower.endsWith(".skn")
-    );
-  };
-
-  const initThreeScene = (model: MjModel) => {
+  const initThreeScene = useCallback((model: MjModel) => {
     const canvas = canvasRef.current;
     const three = threeRef.current;
+    const cameraCanvas = cameraCanvasRef.current;
     if (!canvas || !three) return;
 
     const { THREE, OrbitControls, Reflector } = three;
@@ -621,7 +648,6 @@ export default function DemoPage() {
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.useLegacyLights = true;
     THREE.ColorManagement.enabled = false;
 
     const scene = new THREE.Scene();
@@ -664,6 +690,18 @@ export default function DemoPage() {
     cameraRef.current = camera;
     controlsRef.current = controls;
 
+    if (cameraCanvas) {
+      const cameraRenderer = new THREE.WebGLRenderer({ canvas: cameraCanvas, antialias: true });
+      cameraRenderer.setPixelRatio(1.0);
+      cameraRenderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+      cameraRenderer.shadowMap.enabled = true;
+      cameraRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      const mujocoCamera = new THREE.PerspectiveCamera(60, 1, 0.001, 100);
+
+      cameraRendererRef.current = cameraRenderer;
+      mujocoCameraRef.current = mujocoCamera;
+    }
+
     meshesRef.current = createGeomMeshes(THREE, Reflector, model, scene);
 
     const onResize = () => {
@@ -672,6 +710,17 @@ export default function DemoPage() {
       renderer.setSize(width, height, false);
       camera.aspect = width / Math.max(height, 1);
       camera.updateProjectionMatrix();
+
+      if (cameraWrapRef.current && cameraRendererRef.current && mujocoCameraRef.current) {
+        const wrapWidth = cameraWrapRef.current.clientWidth;
+        const wrapHeight = cameraWrapRef.current.clientHeight;
+        const renderWidth = Math.min(wrapWidth, wrapHeight * CAMERA_ASPECT);
+        const renderHeight = renderWidth / CAMERA_ASPECT;
+        setCameraViewportSize({ width: renderWidth, height: renderHeight });
+        cameraRendererRef.current.setSize(renderWidth, renderHeight, false);
+        mujocoCameraRef.current.aspect = renderWidth / Math.max(renderHeight, 1);
+        mujocoCameraRef.current.updateProjectionMatrix();
+      }
     };
 
     onResize();
@@ -679,11 +728,46 @@ export default function DemoPage() {
     window.addEventListener("resize", onResize);
 
     renderer.info.autoReset = true;
-  };
+  }, [createGeomMeshes]);
 
   useEffect(() => {
     runningRef.current = running;
   }, [running]);
+
+  useEffect(() => {
+    selectedCameraRef.current = selectedCamera;
+  }, [selectedCamera]);
+
+  useLayoutEffect(() => {
+    const updateAvailableHeight = () => {
+      const nav = document.body.firstElementChild as HTMLElement | null;
+      const footer = document.querySelector("footer") as HTMLElement | null;
+      const navHeight = nav?.getBoundingClientRect().height ?? 0;
+      const footerHeight = footer?.getBoundingClientRect().height ?? 0;
+      let padding = 0;
+      if (mainRef.current) {
+        const styles = window.getComputedStyle(mainRef.current);
+        padding =
+          (Number.parseFloat(styles.paddingTop) || 0) +
+          (Number.parseFloat(styles.paddingBottom) || 0);
+      }
+      const nextHeight = Math.max(0, window.innerHeight - navHeight - footerHeight - padding);
+      setAvailableHeight(nextHeight);
+    };
+
+    updateAvailableHeight();
+    window.addEventListener("resize", updateAvailableHeight);
+    return () => window.removeEventListener("resize", updateAvailableHeight);
+  }, []);
+
+  useLayoutEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      resizeHandlerRef.current?.();
+    });
+    if (sceneWrapRef.current) resizeObserver.observe(sceneWrapRef.current);
+    if (cameraWrapRef.current) resizeObserver.observe(cameraWrapRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -694,14 +778,14 @@ export default function DemoPage() {
         const [{ default: loadMujoco }, THREE, { OrbitControls }] = await Promise.all([
           import("mujoco-js"),
           import("three"),
-          import("three/examples/jsm/controls/OrbitControls"),
+          import("three/examples/jsm/controls/OrbitControls.js"),
         ]);
         const mujoco = await loadMujoco();
 
         if (cancelled) return;
 
         threeRef.current = { THREE, OrbitControls, Reflector };
-        mujocoRef.current = mujoco as MujocoModule;
+        mujocoRef.current = mujoco;
 
         try {
           mujoco.FS.mkdir("/working");
@@ -719,7 +803,8 @@ export default function DemoPage() {
         const rootXmlPath = `/working/${xmlFilename}`;
         mujoco.FS.writeFile(rootXmlPath, xmlText);
         setStatus("Downloading MuJoCo WASM assets…");
-        await downloadAssetsToFS(mujoco, xmlFilename, xmlText, ASSET_BASE_URL);
+        const includeBaseUrl = getIncludeBaseUrl(xmlUrl);
+        await downloadAssetsToFS(mujoco, xmlFilename, xmlText, ASSET_BASE_URL, includeBaseUrl);
         if (cancelled) return;
         const model = mujoco.MjModel.loadFromXML(rootXmlPath);
         const data = new mujoco.MjData(model);
@@ -730,6 +815,9 @@ export default function DemoPage() {
         initThreeScene(model);
 
         setBodyCount(model.nbody);
+        setCameraCount(model.ncam ?? 0);
+        setCameraNames(getCameraNames(model));
+        setSelectedCamera(0);
         setSimTime(0);
         setRunning(true);
         setStatus("Running");
@@ -746,8 +834,10 @@ export default function DemoPage() {
       const data = dataRef.current;
       const canvas = canvasRef.current;
       const renderer = rendererRef.current;
+      const cameraRenderer = cameraRendererRef.current;
       const scene = sceneRef.current;
       const camera = cameraRef.current;
+      const mujocoCamera = mujocoCameraRef.current;
       const controls = controlsRef.current;
 
       if (!mujoco || !model || !data || !canvas || !renderer || !scene || !camera) return;
@@ -762,6 +852,14 @@ export default function DemoPage() {
       updateLights(model, data);
       controls?.update();
       renderer.render(scene, camera);
+      if (cameraRenderer && mujocoCamera && model.ncam > 0) {
+        const cameraIndex = Math.min(
+          Math.max(0, selectedCameraRef.current),
+          Math.max(0, model.ncam - 1)
+        );
+        updateMujocoCamera(threeRef.current!.THREE, model, data, cameraIndex, mujocoCamera);
+        cameraRenderer.render(scene, mujocoCamera);
+      }
       if (data.time - lastUiUpdateRef.current > 0.1) {
         lastUiUpdateRef.current = data.time;
         setSimTime(data.time);
@@ -784,8 +882,9 @@ export default function DemoPage() {
       modelRef.current?.delete();
       controlsRef.current?.dispose();
       rendererRef.current?.dispose();
+      cameraRendererRef.current?.dispose();
     };
-  }, []);
+  }, [downloadAssetsToFS, getCameraNames, initThreeScene, updateBodies, updateLights, updateMujocoCamera]);
 
   const onReset = () => {
     const mujoco = mujocoRef.current;
@@ -797,52 +896,82 @@ export default function DemoPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex flex-col gap-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">MuJoCo WASM Demo</h1>
-          <p className="text-sm text-neutral-600">
-            Humanoid simulation using the official MuJoCo WebAssembly bindings.
-          </p>
-        </header>
-
-        <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 px-5 py-3">
-            <div className="text-sm text-neutral-600">
-              Status: <span className="font-medium text-neutral-900">{status}</span>
-            </div>
+    <main ref={mainRef} className="mx-auto flex w-full max-w-7xl flex-col px-6 py-6">
+      <section
+        className="flex flex-col rounded-2xl border border-neutral-200 bg-white shadow-sm"
+        style={availableHeight ? { height: availableHeight } : undefined}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 px-5 py-3">
+          <div className="text-sm text-neutral-600">
+            Status: <span className="font-medium text-neutral-900">{status}</span>
+          </div>
           <div className="flex items-center gap-3 text-sm text-neutral-600">
             <span>t = {simTime.toFixed(2)}s</span>
             <span>{bodyCount} bodies</span>
+            <span>{cameraCount} cameras</span>
           </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setRunning((prev) => !prev)}
-                className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-100"
-              >
-                {running ? "Pause" : "Run"}
-              </button>
-              <button
-                type="button"
-                onClick={onReset}
-                className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-100"
-              >
-                Reset
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRunning((prev) => !prev)}
+              className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-100"
+            >
+              {running ? "Pause" : "Run"}
+            </button>
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-100"
+            >
+              Reset
+            </button>
           </div>
+        </div>
 
-          <div className="px-5 py-4">
-            <div className="relative h-[520px] w-full overflow-hidden rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-100">
+        <div className="flex flex-1 flex-col px-5 py-4">
+          <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+            <div
+              ref={sceneWrapRef}
+              className="relative flex-1 overflow-hidden rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-100 lg:flex-[2]"
+            >
               <canvas ref={canvasRef} className="h-full w-full" />
             </div>
-            <p className="mt-3 text-xs text-neutral-500">
-              Full WebGL rendering via Three.js, driven by the MuJoCo simulation state.
-            </p>
+            <div
+              ref={cameraWrapRef}
+              className="relative flex-1 overflow-hidden rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-100 lg:flex-[1]"
+            >
+              <div className="absolute left-4 top-4 z-10 rounded-full bg-white/80 px-3 py-1 text-xs text-neutral-700 shadow-sm">
+                Model camera
+              </div>
+              <div className="flex h-full w-full items-center justify-center">
+                <canvas
+                  ref={cameraCanvasRef}
+                  style={{
+                    width: cameraViewportSize.width || undefined,
+                    height: cameraViewportSize.height || undefined,
+                  }}
+                />
+              </div>
+            </div>
           </div>
-        </section>
-      </div>
+          {cameraCount > 1 && (
+            <div className="mt-4 flex items-center gap-2 text-xs text-neutral-600">
+              <span>Camera:</span>
+              <select
+                value={selectedCamera}
+                onChange={(event) => setSelectedCamera(Number(event.target.value))}
+                className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-800"
+              >
+                {cameraNames.map((name, index) => (
+                  <option key={`${name}-${index}`} value={index}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }
