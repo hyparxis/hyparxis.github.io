@@ -22,6 +22,17 @@ const nextConfig: NextConfig = {
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
   basePath: '',
   trailingSlash: true,
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}),
+        module: false,
+        fs: false,
+        path: false,
+      };
+    }
+    return config;
+  },
 }
 
 export default withMDX(nextConfig)
