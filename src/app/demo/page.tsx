@@ -11,6 +11,9 @@ const SCENE_XML_URL =
 const ASSET_BASE_URL =
   "https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/main/unitree_g1/";
 
+const MUJOCO_WASM_URL =
+  "https://unpkg.com/mujoco-js@0.0.7/dist/mujoco_wasm.js";
+
 type MujocoModule = Pick<
   MainModule,
   "FS" | "MEMFS" | "MjModel" | "MjData" | "mjtGeom" | "mj_step" | "mj_resetData"
@@ -776,7 +779,7 @@ export default function DemoPage() {
       try {
         setStatus("Loading MuJoCo module…");
         const [{ default: loadMujoco }, THREE, { OrbitControls }] = await Promise.all([
-          import("mujoco-js"),
+          import(/* webpackIgnore: true */ MUJOCO_WASM_URL),
           import("three"),
           import("three/examples/jsm/controls/OrbitControls.js"),
         ]);
