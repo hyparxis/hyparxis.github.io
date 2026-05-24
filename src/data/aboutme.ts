@@ -19,11 +19,11 @@ export interface AboutMe {
 
 export const aboutMe: AboutMe = {
   name: "Pedro Morais",
-  title: "Roboticist",
-  institution: "Agility Robotics",
+  title: "Research Scientist",
+  institution: "Boston Dynamics",
   // Note that links work in the description
   description:
-    'I currently work at <a href="https://www.agilityrobotics.com">Agility Robotics</a> as a Robotics Software Engineer. My work at Agility has spanned a variety of topics from manifold optimization, whole body inverse kinematics, reinforcement learning, contact simulation, subsystem modeling and perception simulation. I currently am on the Simulation team. <br><br>Before joining Agility I was an undergrad at Oregon State University where I did research on bipedal locomotion coadvised by <a href="https://engineering.oregonstate.edu/people/jonathan-hurst">Jonathan Hurst</a> and <a href="https://engineering.oregonstate.edu/people/alan-fern">Alan Fern</a>. At OSU I spearheaded the transition of the <a href="https://mime.engineering.oregonstate.edu/research/drl/">Dynamic Robotics Laboratory</a> from a hardware focused research group to a software and controls focused group with some of the earliest sim-to-real reinforcement learning results for bipedal running. <br><br>My interests broadly lie in the intersection of optimization, simulation and end-to-end control of agile and dexterous humanoid robots.',
+    'I currently work as a Staff Research Scientist at <a href="https://bostondynamics.com/products/atlas/">Boston Dynamics</a> on the Atlas dexterous manipulation team. <br><br>Prior to joining Boston Dynamics I worked for 7 years at <a href="https://www.agilityrobotics.com">Agility Robotics</a> where I was one of the first 20 employees and worked on a variety of topics spanning manifold optimization, whole body inverse kinematics, reinforcement learning, contact simulation, subsystem modeling and perception simulation. <br><br>Before joining Agility I was an undergrad at Oregon State University where I did research on bipedal locomotion coadvised by <a href="https://engineering.oregonstate.edu/people/jonathan-hurst">Jonathan Hurst</a> and <a href="https://engineering.oregonstate.edu/people/alan-fern">Alan Fern</a>. At OSU I spearheaded the transition of the <a href="https://mime.engineering.oregonstate.edu/research/drl/">Dynamic Robotics Laboratory</a> from a hardware focused research group to a software and controls focused group with some of the earliest sim-to-real reinforcement learning results for bipedal running. <br><br>My interests broadly lie in the intersection of optimization, simulation and end-to-end learning and control of agile and dexterous humanoid robots.',
   email: "autranemorais@gmail.com",
   imageUrl: "/images/profile.jpeg",
   googleScholarUrl: "https://scholar.google.com/citations?user=iicB8nQAAAAJ&hl=en",

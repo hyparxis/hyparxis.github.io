@@ -10,3 +10,10 @@ This is my personal website/blog. The bulk of the styling and 'about me' section
 - A top navbar to switch between blog and about me sections
 
 Feel free to fork this and make whatever changes you want for your own website; I've preserved research-website-template's MIT license. Big thanks to [Towaki](https://github.com/tovacinni) for the original template.
+
+You can serve the website locally using
+
+`
+$ npm install
+$ npm run dev
+`

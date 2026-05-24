@@ -10,11 +10,19 @@ export interface Experience {
 
 export const experienceData: Experience[] = [
   {
-    date: "2019 - Present",
+    date: "2026 - Present",
+    title: "Staff Research Scientist",
+    company: "Boston Dynamics",
+    description:
+      "Staff Research Scientist at Boston Dynamics on the Atlas dexterous manipulation team.",
+    companyUrl: "https://bostondynamics.com",
+  },
+  {
+    date: "2019 - 2026",
     title: "Robotics Software Engineer",
     company: "Agility Robotics",
     description:
-      "One of the first 20 employees at Agility Robotics. Currently on the  simulation and innovation teams, previously optimization and controls.",
+      "One of the first 20 employees at Agility Robotics. Most recently on the  simulation and innovation teams, previously optimization and controls.",
     companyUrl: "https://agilityrobotics.com",
   },
   {
